@@ -5,8 +5,9 @@ from azure.storage.blob import BlobServiceClient
 import osmnx as ox
 from FindRoute.constants import BLOB_NAME, CONNECTION_STRING, CONTAINER_NAME
 
-from gravel_cycling.weight import cycle_gravel_edge_weight
+from gravel_cycling.weight import cycle_gravel_edge_weight, cycle_gravel_edge_weight_alt
 from convert.polyline import route_to_polyline6
+from metrics.route_parser import metrics_from_route
 import pickle
 import json
 
@@ -19,7 +20,6 @@ blob_client = blob_service_client.get_blob_client(
 blob_data = blob_client.download_blob().readall()
 
 G = pickle.loads(blob_data)
-
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
@@ -38,13 +38,52 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         route = ox.shortest_path(G, start_node, end_node,
                                  weight=cycle_gravel_edge_weight)
 
+        route_alt = ox.shortest_path(G, start_node, end_node,
+                                     weight=cycle_gravel_edge_weight_alt)
+
+        distance, duration, surface_types_data, highway_types_data = metrics_from_route(
+            G, route)
+
+        distance_alt, duration_alt, surface_types_data_alt, highway_types_data_alt = metrics_from_route(
+            G, route_alt)
+
         response_body = {
             "routes": [
+                        {
+                            "geometry": route_to_polyline6(G, route),
+                            "duration": duration,
+                            "distance": distance,
+                            "metrics": {
+                                "surfaceMetrics": surface_types_data,
+                                "highwayMetrics": highway_types_data,
+                            }
+                        },
                 {
-                    "geometry": route_to_polyline6(G, route)
+                            "geometry": route_to_polyline6(G, route_alt),
+                            "duration": duration_alt,
+                            "distance": distance_alt,
+                            "metrics": {
+                                "surfaceMetrics": surface_types_data_alt,
+                                "highwayMetrics": highway_types_data_alt,
+                            }
+                        }
+            ],
+            "waypoints": [
+                {
+                    "location": [
+                        origin['longitude'],
+                        origin['latitude']
+                    ]
+                },
+                {
+                    "location": [
+                        destination['longitude'],
+                        destination['latitude']
+                    ]
                 }
             ]
         }
+
         return func.HttpResponse(json.dumps(response_body),
                                  status_code=200,
                                  mimetype="application/json"
