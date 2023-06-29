@@ -3,23 +3,22 @@ import logging
 import azure.functions as func
 from azure.storage.blob import BlobServiceClient
 import osmnx as ox
-from FindRoute.constants import BLOB_NAME, CONNECTION_STRING, CONTAINER_NAME
+from FindRoute.constants import BLOB_NAME_COORDS_DICTIONARY, CONNECTION_STRING, CONTAINER_NAME, ERROR_MESSAGE_INVALID_COORDINATES
 
 from gravel_cycling.weight import cycle_gravel_edge_weight, cycle_gravel_edge_weight_alt
 from convert.polyline import route_to_polyline6
 from metrics.route_parser import metrics_from_route
-import pickle
 import json
 
+from util.file_loader import load_pickle
+from util.tile_resolver import geometry_for_coords
 
-blob_service_client = BlobServiceClient.from_connection_string(
+BLOB_SERVICE_CLIENT = BlobServiceClient.from_connection_string(
     CONNECTION_STRING)
 
-blob_client = blob_service_client.get_blob_client(
-    container=CONTAINER_NAME, blob=BLOB_NAME)
-blob_data = blob_client.download_blob().readall()
+COORDS_DICT = load_pickle(
+    BLOB_SERVICE_CLIENT, CONTAINER_NAME, BLOB_NAME_COORDS_DICTIONARY)
 
-G = pickle.loads(blob_data)
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
@@ -30,10 +29,24 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         origin = req_body['origin']
         destination = req_body['destination']
 
+        origin_lat, origin_lon = origin['latitude'], origin['longitude']
+        dest_lat, dest_lon = destination['latitude'], destination['longitude']
+
+        G = geometry_for_coords(BLOB_SERVICE_CLIENT, CONTAINER_NAME, COORDS_DICT, origin_lat,
+                                origin_lon, dest_lat, dest_lon)
+        
+        if G == None:
+            # Graph cannot be resolved (probably invalid coordinates)
+            logging.info(f'Region not supported: origin: {origin}, destination: {destination}')
+            return func.HttpResponse(ERROR_MESSAGE_INVALID_COORDINATES,
+                            status_code=400,
+                            mimetype='text/plain'
+                            )
+
         start_node = ox.nearest_nodes(
-            G, origin['longitude'], origin['latitude'])
+            G, origin_lon, origin_lat)
         end_node = ox.nearest_nodes(
-            G, destination['longitude'], destination['latitude'])
+            G, dest_lon, dest_lat)
 
         route = ox.shortest_path(G, start_node, end_node,
                                  weight=cycle_gravel_edge_weight)
@@ -80,7 +93,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                         destination['longitude'],
                         destination['latitude']
                     ]
-                }
+                } 
             ]
         }
 

@@ -4,7 +4,7 @@ from gravel_cycling.constants import DEFAULT_WIDTH, SURFACES_PAVED, HIGHWAY_TYPE
 from util.edge_attribute_helper import are_all_paved, are_any_paved, is_highway_cycle_friendly
 
 
-def calculate_cyclability_score(bicycle_type, highway_type, surface_type, foot_type, width, length, name):
+def calculate_cyclability_score(bicycle_type, highway_type, surface_type, foot_type, length, name):
     weight = 1
 
     if bicycle_type == 'designated':
@@ -32,7 +32,7 @@ def calculate_cyclability_score(bicycle_type, highway_type, surface_type, foot_t
     return weight
 
 
-def calculate_cyclability_score_alt(bicycle_type, highway_type, surface_type, foot_type, width, length, name):
+def calculate_cyclability_score_alt(bicycle_type, highway_type, surface_type, foot_type, length, name):
     weight = 1
 
     if surface_type != None and not are_any_paved(surface_type, SURFACES_PAVED):
@@ -48,6 +48,7 @@ def calculate_cyclability_score_alt(bicycle_type, highway_type, surface_type, fo
     return weight
 
 
+# TODO fix error given width value "0,5".
 def extract_width(width):
     if isinstance(width, list):
         numbers = [float(num) for num in width]
@@ -72,13 +73,13 @@ def cycle_gravel_edge_weight(u, v, edge_attr):
     surface_type = edge_attr.get(0).get("surface")
     foot_type = edge_attr.get(0).get("foot")
     length = edge_attr.get(0).get("length", 1)
-    width = edge_attr.get(0).get("width", DEFAULT_WIDTH)
     name = edge_attr.get(0).get("name", "")
 
-    width = extract_width(width)
+    # Width is unused for now.
+    # width = edge_attr.get(0).get("width", DEFAULT_WIDTH)
 
     weight = 1/calculate_cyclability_score(
-        bicycle_type, highway_type, surface_type, foot_type, width, length, name)
+        bicycle_type, highway_type, surface_type, foot_type, length, name)
 
     return weight
 
@@ -92,9 +93,7 @@ def cycle_gravel_edge_weight_alt(u, v, edge_attr):
     width = edge_attr.get(0).get("width", DEFAULT_WIDTH)
     name = edge_attr.get(0).get("name", "")
 
-    width = extract_width(width)
-
     weight = 1/calculate_cyclability_score_alt(
-        bicycle_type, highway_type, surface_type, foot_type, width, length, name)
+        bicycle_type, highway_type, surface_type, foot_type, length, name)
 
     return weight
