@@ -12,4 +12,6 @@ This module creates routes which are optimized for the chosen transportation mod
 
 
 ## Supported Regions
-- Waterloo (40km around) ✅
+The area shown below:
+![range](https://github.com/andreytakhtamirov/trailblaze-pathsense/assets/70922688/65dd12a0-01c7-4700-8bed-875eba092375)
+
