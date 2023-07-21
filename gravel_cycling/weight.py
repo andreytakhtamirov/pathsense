@@ -15,7 +15,7 @@ def calculate_cyclability_score(bicycle_type, highway_type, surface_type, foot_t
             weight = length * 5.0
             return weight
         else:
-            weight = 1/length + length*0.3
+            weight = 1/length
 
     if highway_type != None and is_highway_cycle_friendly(highway_type, HIGHWAY_TYPES):
         if surface_type != None and not are_all_paved(surface_type, SURFACES_PAVED):
@@ -24,7 +24,7 @@ def calculate_cyclability_score(bicycle_type, highway_type, surface_type, foot_t
         elif (surface_type == None):
             weight = length * 5.0
         else:
-            weight = 1/length + length*0.3
+            weight = 1/length
     else:
         if surface_type == None or (surface_type != None and are_all_paved(surface_type, SURFACES_PAVED)):
             weight = 1/length
@@ -36,14 +36,14 @@ def calculate_cyclability_score_alt(bicycle_type, highway_type, surface_type, fo
     weight = 1
 
     if surface_type != None and not are_any_paved(surface_type, SURFACES_PAVED):
-        weight = 1/(length*0.6)
+        weight = 1/length/length
     elif (surface_type == None):
         weight = 1/length
     else:
-        weight = 1/(length*length)
+        weight = 1/length*length
 
     if highway_type != None and is_highway_cycle_friendly(highway_type, HIGHWAY_TYPES):
-        weight *= 0.3
+        weight *= 100
 
     return weight
 
