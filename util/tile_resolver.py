@@ -18,7 +18,8 @@ def geometry_for_coords(BLOB_SERVICE_CLIENT, CONTAINER_NAME, COORDINATE_DICT, or
     gc.disable()
 
     # Assume that the closest tile (center) to the coordinate will surround it enough.
-    # TODO we can improve accuracy later by checking that the coordinate is indeed a reasonable distance within the tile.
+    # TODO we can improve accuracy later by checking that the coordinate is indeed a 
+    # reasonable distance within the tile.
     tile1 = get_closest_coord(COORDINATE_DICT, origin_lat, origin_lon)
     tile2 = get_closest_coord(COORDINATE_DICT, dest_lat, dest_lon)
 
@@ -30,16 +31,23 @@ def geometry_for_coords(BLOB_SERVICE_CLIENT, CONTAINER_NAME, COORDINATE_DICT, or
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = []
 
-        min_x = min(tile1[0], tile2[0])
-        max_x = max(tile1[0], tile2[0])
-        min_y = min(tile1[1], tile2[1])
-        max_y = max(tile1[1], tile2[1])
+        # Calculate the minimum and maximum X and Y coordinates for the bounding box of tiles.
+        # To ensure that all tiles within an approximate 11km proximity are captured, we subtract
+        # and add a value of 0.1 from the minimum and maximum coordinates, respectively. This value
+        # corresponds to approximately 11km, based on the approximation that 0.1° of latitude
+        # or longitude corresponds to around 11.1 km.
+        min_x = min(tile1[0], tile2[0]) - 0.1
+        max_x = max(tile1[0], tile2[0]) + 0.1
+        min_y = min(tile1[1], tile2[1]) - 0.1
+        max_y = max(tile1[1], tile2[1]) + 0.1
 
-        for x in range(min_x, max_x + 1):
-            for y in range(min_y, max_y + 1):
-                if min_x <= x <= max_x and min_y <= y <= max_y:
-                    pickle_file_name = GRAPH_PICKLE_FILE_NAME.format(x, y)
-                    futures.append(executor.submit(
+        for _, tile_idx in COORDINATE_DICT.items():
+            tile_x = tile_idx[0]
+            tile_y = tile_idx[1]
+
+            if min_x <= tile_x <= max_x and min_y <= tile_y <= max_y:
+                pickle_file_name = GRAPH_PICKLE_FILE_NAME.format(tile_x, tile_y)
+                futures.append(executor.submit(
                         load_pickle, BLOB_SERVICE_CLIENT, CONTAINER_NAME, pickle_file_name))
 
         for future in concurrent.futures.as_completed(futures):
