@@ -1,8 +1,8 @@
-# trailblaze-pathsense
+# pathsense
 
-See [trailblaze-flutter](https://github.com/andreytakhtamirov/trailblaze-flutter) to read about the project.
+This module creates routes which are optimized for the chosen transportation mode. Uses omsnx with data tiles from OpenSteetMap to find routes (primary and alternative) between 2 given points.
 
-This module creates routes which are optimized for the chosen transportation mode. It is designed to be accessed from the trailblaze-flutter application. Uses omsnx with data tiles from OpenSteetMap to find routes between 2 given points.
+Since all calculation is done real-time, other data (traffic, user feedback, environment conditions) can be easily integrated simply by including it in the weight calculation function. More transportation modes can also be added easily with new weight functions.
 
 ## How Does it Work?
 - Supporting a wide region poses the challenge of maintaining low route calculation time.
@@ -15,6 +15,10 @@ This module creates routes which are optimized for the chosen transportation mod
 - Road cycling
 - Running
 - Hiking
+
+<img width="1400" src="https://github.com/andreytakhtamirov/pathsense/assets/70922688/1ee9a395-ad05-4f09-944d-7c1faec589cc">
+
+An example of 8 routes, shown with [Leaflet](https://github.com/Leaflet/Leaflet), along with their surface metrics. Note how there are so many different paths that are better than what Google will give you (at least for gravel cycling)!
 
 
 ## Supported Regions
